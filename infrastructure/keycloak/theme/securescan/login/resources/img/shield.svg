@@ -1,0 +1,17 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M64 10L102 24V56C102 80.8 86.6 103.1 64 112C41.4 103.1 26 80.8 26 56V24L64 10Z" fill="url(#shieldFill)"/>
+  <path d="M64 17.5L95 29V55.2C95 75.3 82.8 93.9 64 101.7C45.2 93.9 33 75.3 33 55.2V29L64 17.5Z" stroke="#D8FBFF" stroke-width="3" stroke-opacity="0.72"/>
+  <path d="M64 31V79" stroke="#042432" stroke-width="8" stroke-linecap="round"/>
+  <path d="M45 52H83" stroke="#042432" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="64" cy="52" r="26" fill="url(#ringGlow)" fill-opacity="0.28"/>
+  <defs>
+    <linearGradient id="shieldFill" x1="26" y1="10" x2="108" y2="106" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8FD3DC"/>
+      <stop offset="1" stop-color="#1FB5C6"/>
+    </linearGradient>
+    <radialGradient id="ringGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(64 52) rotate(90) scale(26)">
+      <stop stop-color="#EFF7FB"/>
+      <stop offset="1" stop-color="#EFF7FB" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

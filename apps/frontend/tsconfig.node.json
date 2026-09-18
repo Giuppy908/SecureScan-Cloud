@@ -1,0 +1,29 @@
+{
+  // Configura il controllo TypeScript di vite.config.ts usando i tipi Node, separati dai tipi browser.
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023"],
+    // Fornisce i nomi e le API Node usati dagli strumenti di configurazione, anziché il DOM del browser.
+    "types": ["node"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    // Usa le regole NodeNext per interpretare moduli e import della configurazione Vite.
+    "module": "nodenext",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    // Il controllo statico non scrive una versione JavaScript della configurazione.
+    "noEmit": true,
+
+    /* Linting */
+    // Rileva dichiarazioni e parametri non utilizzati anche nei file degli strumenti.
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  // Seleziona solo vite.config.ts per questo progetto di controllo statico.
+  "include": ["vite.config.ts"]
+}

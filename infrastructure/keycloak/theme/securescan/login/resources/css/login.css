@@ -1,0 +1,1107 @@
+/*
+ * Stili del theme login `securescan`.
+ *
+ * Questo file controlla l'aspetto delle pagine Keycloak del login, non la loro
+ * logica di sicurezza. Le sezioni principali coprono:
+ * - sfondo e card condivise dei flow di autenticazione;
+ * - campi form di login, registrazione e reset password;
+ * - alert e messaggi di errore/successo;
+ * - box "Requisiti password";
+ * - pagina finale "Password aggiornata";
+ * - adattamento responsive.
+ */
+:root {
+  color-scheme: dark;
+  --ssc-bg-1: #07111b;
+  --ssc-bg-2: #0d1f2e;
+  --ssc-bg-3: #10293d;
+  --ssc-panel: rgba(10, 24, 36, 0.92);
+  --ssc-panel-soft: rgba(16, 37, 53, 0.82);
+  --ssc-panel-border: rgba(143, 211, 220, 0.18);
+  --ssc-text: #eff7fb;
+  --ssc-text-muted: #9eb2bf;
+  --ssc-heading: #f8fcff;
+  --ssc-accent: #42d9ea;
+  --ssc-accent-strong: #1faebd;
+  --ssc-focus: rgba(66, 217, 234, 0.28);
+  --ssc-danger-bg: rgba(182, 61, 61, 0.16);
+  --ssc-danger-border: rgba(214, 72, 72, 0.42);
+  --ssc-danger-text: #ffe1e1;
+  --ssc-shadow: 0 28px 60px rgba(0, 0, 0, 0.36);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  color: var(--ssc-text);
+  background:
+    radial-gradient(circle at top left, rgba(66, 217, 234, 0.14), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(31, 174, 189, 0.1), transparent 30%),
+    linear-gradient(145deg, var(--ssc-bg-1) 0%, var(--ssc-bg-2) 55%, var(--ssc-bg-3) 100%);
+}
+
+body {
+  min-height: 100vh;
+}
+
+.login-pf,
+.login-pf-page,
+.pf-v5-c-login {
+  min-height: 100vh;
+  background: transparent !important;
+}
+
+.login-pf-page {
+  padding: 16px 24px;
+}
+
+.pf-v5-c-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pf-v5-c-login__container,
+#kc-content-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pf-v5-c-login__main,
+#kc-form-card,
+.card-pf {
+  order: 1;
+  margin: 0 !important;
+  padding: 24px 24px 22px;
+  border: 1px solid var(--ssc-panel-border) !important;
+  border-radius: 28px !important;
+  background: var(--ssc-panel) !important;
+  box-shadow: var(--ssc-shadow) !important;
+  backdrop-filter: blur(12px);
+}
+
+#kc-info,
+.pf-v5-c-login__main-footer-band,
+.login-pf-page .login-pf-signup,
+#kc-header,
+.pf-v5-c-login__main-header {
+  display: none !important;
+}
+
+.pf-v5-c-form__group,
+.form-group {
+  margin-bottom: 0 !important;
+}
+
+.pf-v5-c-form__label,
+.control-label,
+label {
+  display: inline-flex;
+  margin-bottom: 8px !important;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ssc-text);
+}
+
+.pf-v5-c-form-control,
+.form-control,
+input:not([type="checkbox"]),
+select,
+textarea {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 16px !important;
+  border: 1px solid rgba(151, 178, 191, 0.22) !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+  color: var(--ssc-text) !important;
+  padding: 14px 16px !important;
+  font-size: 1rem !important;
+  box-shadow: none !important;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.pf-v5-c-form-control::placeholder,
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: rgba(239, 247, 251, 0.42);
+}
+
+.pf-v5-c-form-control:hover,
+.form-control:hover,
+input:hover,
+textarea:hover {
+  border-color: rgba(151, 178, 191, 0.34) !important;
+}
+
+.pf-v5-c-form-control:focus,
+.pf-v5-c-form-control:focus-visible,
+.form-control:focus,
+.form-control:focus-visible,
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: none !important;
+  border-color: rgba(66, 217, 234, 0.82) !important;
+  box-shadow: 0 0 0 4px var(--ssc-focus) !important;
+}
+
+.pf-v5-c-input-group,
+.input-group {
+  align-items: stretch;
+}
+
+.pf-v5-c-input-group .pf-v5-c-button,
+.input-group .btn {
+  min-width: 52px;
+  border-radius: 16px !important;
+  border: 1px solid rgba(151, 178, 191, 0.22) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--ssc-text) !important;
+}
+
+#kc-form-options,
+.pf-v5-c-form__helper-text {
+  color: var(--ssc-text-muted);
+}
+
+#kc-form-options .checkbox,
+.pf-v5-c-check {
+  color: var(--ssc-text-muted);
+}
+
+#kc-form-options-wrapper,
+.pf-v5-c-login__main-footer-links,
+#kc-form-buttons {
+  margin-top: 4px;
+}
+
+#kc-form-buttons .pf-v5-c-button,
+#kc-login,
+input[type="submit"],
+button[type="submit"] {
+  width: 100%;
+  min-height: 54px;
+  border: 0 !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, var(--ssc-accent) 0%, var(--ssc-accent-strong) 100%) !important;
+  color: #042534 !important;
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  box-shadow: 0 14px 30px rgba(31, 174, 189, 0.28);
+  transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
+}
+
+#kc-form-buttons .pf-v5-c-button:hover,
+#kc-login:hover,
+input[type="submit"]:hover,
+button[type="submit"]:hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+#kc-form-buttons .pf-v5-c-button:active,
+#kc-login:active,
+input[type="submit"]:active,
+button[type="submit"]:active {
+  transform: translateY(0);
+}
+
+a {
+  color: var(--ssc-accent);
+}
+
+a:hover,
+a:focus-visible {
+  color: #89edf7;
+}
+
+.pf-v5-c-alert,
+.alert {
+  border-radius: 16px !important;
+  border: 1px solid var(--ssc-danger-border) !important;
+  background: var(--ssc-danger-bg) !important;
+  color: var(--ssc-danger-text) !important;
+  box-shadow: none !important;
+}
+
+.pf-v5-c-alert__title,
+.alert-title,
+.kc-feedback-text {
+  color: inherit !important;
+}
+
+.kcFormGroupClass .required,
+.required {
+  color: #9be8f0;
+}
+
+.pf-v5-c-check__label,
+.checkbox label {
+  color: var(--ssc-text-muted);
+}
+
+.pf-v5-c-login__main-footer-links-item,
+#kc-form-options a,
+#kc-registration a,
+#kc-info-wrapper a {
+  font-weight: 700;
+}
+
+.pf-v5-c-login__main-footer-links-item {
+  margin-top: 12px;
+}
+
+@media (max-width: 920px) {
+  .login-pf-page {
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  #kc-register-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pf-v5-c-login__main,
+  #kc-form-card,
+  .card-pf {
+    padding: 24px 20px 22px;
+    border-radius: 24px !important;
+  }
+
+  .ssc-auth-shell--login,
+  .ssc-auth-shell--register {
+    width: min(100%, calc(100vw - 32px));
+  }
+}
+
+.ssc-auth-shell {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.ssc-auth-shell--login {
+  width: min(470px, calc(100vw - 96px));
+  margin: 0 auto;
+}
+
+.ssc-auth-shell--register {
+  width: min(752px, calc(100vw - 96px));
+  margin: 0 auto;
+}
+
+.ssc-auth-shell--action {
+  width: min(714px, calc(100vw - 96px));
+  margin: 0 auto;
+}
+
+.ssc-auth-card {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+
+.ssc-auth-card__subtitle,
+.ssc-field-note,
+.ssc-password-policy,
+.ssc-inline-link--center,
+.ssc-auth-footer,
+.ssc-auth-footer span {
+  color: var(--ssc-text-muted);
+}
+
+.ssc-auth-card__subtitle {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.ssc-auth-card__header {
+  display: grid;
+  gap: 4px;
+}
+
+.ssc-auth-card__title {
+  margin: 0;
+  color: var(--ssc-heading);
+  font-size: clamp(1.55rem, 2vw, 1.95rem);
+  font-weight: 700;
+}
+
+.ssc-auth-card__title--icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ssc-auth-card__title--icon::before {
+  /* Piccolo contenitore con scudo SecureScan usato nelle schermate auth principali. */
+  content: "";
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(18, 40, 58, 0.92), rgba(8, 17, 27, 0.92)),
+    center / 22px no-repeat url("../img/shield.svg");
+  border: 1px solid rgba(143, 211, 220, 0.18);
+}
+
+.ssc-form-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.ssc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+
+.ssc-form-grid--compact {
+  gap: 8px 16px;
+}
+
+.ssc-form-grid--password-reset .ssc-field__messages {
+  min-height: 1.55rem;
+}
+
+.ssc-field {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  align-content: start;
+}
+
+.ssc-field__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.ssc-password-field {
+  position: relative;
+}
+
+.ssc-password-field input {
+  padding-right: 66px !important;
+}
+
+.ssc-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  min-width: auto;
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ssc-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ssc-password-toggle:hover,
+.ssc-password-toggle:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ssc-password-toggle__icon {
+  width: 18px;
+  height: 18px;
+  background-color: currentColor;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-position: center;
+  mask-repeat: no-repeat;
+}
+
+.ssc-password-toggle[aria-pressed="true"] .ssc-password-toggle__icon {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3l18 18'/%3E%3Cpath d='M10.58 10.58A3 3 0 0012 15a3 3 0 002.42-4.42'/%3E%3Cpath d='M9.88 5.09A9.77 9.77 0 0112 5c7 0 11 7 11 7a21.77 21.77 0 01-4.29 5.13'/%3E%3Cpath d='M6.61 6.61A21.69 21.69 0 001 12s4 7 11 7a10.72 10.72 0 005.39-1.39'/%3E%3C/svg%3E");
+}
+
+.ssc-field__messages {
+  min-height: 1.95rem;
+  display: grid;
+  align-content: start;
+  gap: 3px;
+}
+
+.ssc-field__messages--with-note {
+  min-height: 2.9rem;
+}
+
+.ssc-field-error {
+  color: #ffcccc;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.ssc-field-error--dismissing {
+  opacity: 0;
+  transform: translateY(-2px);
+}
+
+.ssc-field-note {
+  font-size: 0.79rem;
+  line-height: 1.25;
+  min-height: 0.95rem;
+}
+
+.ssc-field-note--spacer {
+  visibility: hidden;
+}
+
+.ssc-password-policy {
+  /* Box informativo condiviso tra registrazione e reset password. */
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(143, 211, 220, 0.14);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.ssc-password-policy--compact {
+  margin-top: 4px;
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+
+.ssc-form-grid--password-reset .ssc-password-policy--compact {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.ssc-password-policy__title {
+  margin: 0 0 6px;
+  color: var(--ssc-text);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.ssc-helper-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 4px 20px;
+  align-items: start;
+}
+
+.ssc-helper-list li {
+  color: var(--ssc-text-muted);
+  font-size: 0.81rem;
+}
+
+.ssc-helper-list li.is-satisfied {
+  color: #9be8f0;
+}
+
+.ssc-submit--full {
+  grid-column: 1 / -1;
+}
+
+.ssc-submit--secondary {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--ssc-text) !important;
+  border: 1px solid rgba(151, 178, 191, 0.22) !important;
+  box-shadow: none !important;
+}
+
+.ssc-submit--secondary:hover,
+.ssc-submit--secondary:focus-visible {
+  filter: none;
+  transform: none;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.ssc-inline-link {
+  color: var(--ssc-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ssc-inline-link--center {
+  justify-self: center;
+}
+
+.ssc-inline-link--left {
+  justify-self: flex-start;
+}
+
+.ssc-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ssc-text-muted);
+}
+
+.ssc-inline-link--right {
+  justify-self: flex-end;
+}
+
+.ssc-auth-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.92rem;
+}
+
+.ssc-auth-footer--wide {
+  justify-content: flex-start;
+}
+
+.ssc-info-card {
+  display: grid;
+  gap: 12px;
+}
+
+.ssc-info-card--success-panel {
+  /* Layout della pagina finale "Password aggiornata". */
+  gap: 20px;
+  justify-items: center;
+  text-align: center;
+  padding: 18px 10px 10px;
+}
+
+.ssc-info-card--verify-email {
+  gap: 18px;
+  justify-items: center;
+  text-align: center;
+  padding: 16px 8px 10px;
+}
+
+.ssc-info-card--session-state {
+  gap: 18px;
+  justify-items: center;
+  text-align: center;
+  padding: 18px 8px 10px;
+}
+
+.ssc-info-card--success-panel .ssc-auth-card__header {
+  width: 100%;
+  justify-items: center;
+}
+
+.ssc-info-card--verify-email .ssc-auth-card__header {
+  width: 100%;
+  justify-items: center;
+  gap: 16px;
+}
+
+.ssc-info-card--session-state .ssc-auth-card__header {
+  width: 100%;
+  justify-items: center;
+  gap: 16px;
+}
+
+.ssc-info-card__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  width: fit-content;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(143, 211, 220, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ssc-text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ssc-info-card__eyebrow--success {
+  border-color: rgba(72, 168, 110, 0.36);
+  background: rgba(59, 131, 85, 0.14);
+  color: #dbffe7;
+}
+
+.ssc-info-card__eyebrow--teal {
+  border-color: rgba(66, 217, 234, 0.3);
+  background: rgba(66, 217, 234, 0.08);
+  color: #d8fbff;
+}
+
+.ssc-auth-card__title--centered {
+  text-align: center;
+}
+
+.ssc-verify-email-icon {
+  width: 118px;
+  height: 118px;
+  position: relative;
+  border-radius: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 30% 24%, rgba(66, 217, 234, 0.24), transparent 54%),
+    linear-gradient(180deg, rgba(14, 35, 53, 0.94), rgba(9, 20, 31, 0.96));
+  border: 1px solid rgba(143, 211, 220, 0.2);
+  box-shadow:
+    0 18px 36px rgba(5, 16, 28, 0.34),
+    inset 0 0 0 1px rgba(95, 223, 240, 0.04);
+}
+
+.ssc-verify-email-icon__ring {
+  position: absolute;
+  inset: 14px;
+  border-radius: 24px;
+  border: 1px solid rgba(66, 217, 234, 0.16);
+  background: radial-gradient(circle at top, rgba(66, 217, 234, 0.08), transparent 64%);
+}
+
+.ssc-verify-email-icon__glyph,
+.ssc-verify-email-icon__badge {
+  position: absolute;
+  background-color: #57e7f7;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.ssc-verify-email-icon__glyph {
+  width: 48px;
+  height: 48px;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='14' x='2' y='5' rx='2'/%3E%3Cpath d='m22 7-8.97 6.42a1.75 1.75 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E");
+}
+
+.ssc-verify-email-icon__badge {
+  width: 28px;
+  height: 28px;
+  right: 20px;
+  bottom: 18px;
+  border-radius: 999px;
+  background-color: #a9fff2;
+  box-shadow: 0 0 0 10px rgba(10, 24, 36, 0.92);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+}
+
+.ssc-session-state-icon {
+  width: 110px;
+  height: 110px;
+  position: relative;
+  border-radius: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 30% 24%, rgba(66, 217, 234, 0.2), transparent 56%),
+    linear-gradient(180deg, rgba(14, 35, 53, 0.94), rgba(9, 20, 31, 0.96));
+  border: 1px solid rgba(143, 211, 220, 0.18);
+  box-shadow:
+    0 18px 34px rgba(5, 16, 28, 0.3),
+    inset 0 0 0 1px rgba(95, 223, 240, 0.04);
+}
+
+.ssc-session-state-icon__ring {
+  position: absolute;
+  inset: 14px;
+  border-radius: 24px;
+  border: 1px solid rgba(66, 217, 234, 0.14);
+  background: radial-gradient(circle at top, rgba(66, 217, 234, 0.07), transparent 64%);
+}
+
+.ssc-session-state-icon__glyph,
+.ssc-session-state-icon__badge {
+  position: absolute;
+  background-color: #57e7f7;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.ssc-session-state-icon__glyph {
+  width: 46px;
+  height: 46px;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E");
+}
+
+.ssc-session-state-icon__badge {
+  width: 30px;
+  height: 30px;
+  right: 18px;
+  bottom: 18px;
+  border-radius: 999px;
+  background-color: #a9fff2;
+  box-shadow: 0 0 0 10px rgba(10, 24, 36, 0.92);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='11' width='14' height='9' rx='2'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E");
+}
+
+.ssc-session-state-icon__badge--shield {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 6 5.7v5.45c0 3.47 2.41 6.65 6 7.85 3.59-1.2 6-4.38 6-7.85V5.7L12 3Z'/%3E%3Cpath d='m9.5 11.5 1.7 1.7 3.3-3.7'/%3E%3C/svg%3E");
+}
+
+.ssc-session-state-icon__badge--alert {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0Z'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
+}
+
+.ssc-success-icon {
+  /* Icona di conferma positiva usata soltanto nella schermata finale del reset password. */
+  width: 94px;
+  height: 94px;
+  position: relative;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(82, 183, 125, 0.34);
+  background:
+    radial-gradient(circle at 30% 30%, rgba(102, 212, 151, 0.14), transparent 62%),
+    rgba(32, 82, 60, 0.36);
+  box-shadow:
+    0 16px 34px rgba(16, 36, 53, 0.24),
+    inset 0 0 0 1px rgba(146, 232, 192, 0.035);
+}
+
+.ssc-success-icon__check {
+  width: 34px;
+  height: 34px;
+  background-color: #59f0c9;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.ssc-success-icon__spark {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: rgba(89, 240, 201, 0.96);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  box-shadow: 0 0 12px rgba(89, 240, 201, 0.22);
+}
+
+.ssc-success-icon__spark--top-left {
+  top: 8px;
+  left: -26px;
+  width: 12px;
+  height: 12px;
+}
+
+.ssc-success-icon__spark--top-right {
+  top: 4px;
+  right: -26px;
+}
+
+.ssc-success-icon__spark--left {
+  left: -18px;
+  bottom: 12px;
+  width: 10px;
+  height: 10px;
+}
+
+.ssc-success-icon__spark--right {
+  right: -18px;
+  bottom: 14px;
+  width: 10px;
+  height: 10px;
+}
+
+.ssc-auth-card__title--success {
+  text-align: center;
+  font-size: clamp(1.95rem, 4vw, 3.35rem);
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.ssc-info-card__body {
+  margin: 0;
+  color: var(--ssc-text);
+  line-height: 1.55;
+}
+
+.ssc-info-card__body--success {
+  display: grid;
+  gap: 12px;
+  max-width: 520px;
+  color: var(--ssc-text-muted);
+}
+
+.ssc-info-card__body--success p {
+  margin: 0;
+  line-height: 1.58;
+}
+
+.ssc-info-card__body--success .ssc-info-card__body-lead {
+  color: #43d9d8;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.ssc-info-card__body--verify-email {
+  display: grid;
+  gap: 12px;
+  max-width: 540px;
+}
+
+.ssc-info-card__body--verify-email p {
+  margin: 0;
+  line-height: 1.58;
+}
+
+.ssc-info-card__body--verify-email .ssc-info-card__body-lead {
+  color: #43d9d8;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.ssc-info-card__body--session-state {
+  display: grid;
+  gap: 14px;
+  max-width: 620px;
+  color: var(--ssc-text-muted);
+}
+
+.ssc-info-card__body--session-state p {
+  margin: 0;
+  line-height: 1.58;
+}
+
+.ssc-info-card__body--session-state .ssc-info-card__body-lead {
+  color: #dff9ff;
+  font-size: 1.12rem;
+  font-weight: 700;
+}
+
+.ssc-info-card__notice {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 20px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(143, 211, 220, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+}
+
+.ssc-info-card__notice-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(34, 63, 92, 0.96), rgba(21, 46, 70, 0.96)),
+    rgba(20, 39, 59, 0.96);
+  border: 1px solid rgba(84, 196, 232, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(106, 220, 255, 0.03);
+  position: relative;
+}
+
+.ssc-info-card__notice-icon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 22px;
+  height: 22px;
+  background-color: #53e7ff;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='13' r='8'/%3E%3Cpath d='M12 9v4l2.5 2.5'/%3E%3Cpath d='M12 3v2'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.ssc-info-card__notice-icon--mail::before {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='14' x='2' y='5' rx='2'/%3E%3Cpath d='m22 7-8.97 6.42a1.75 1.75 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E");
+}
+
+.ssc-info-card__notice-icon--shield::before {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 6 5.7v5.45c0 3.47 2.41 6.65 6 7.85 3.59-1.2 6-4.38 6-7.85V5.7L12 3Z'/%3E%3Cpath d='m9.5 11.5 1.7 1.7 3.3-3.7'/%3E%3C/svg%3E");
+}
+
+.ssc-info-card__notice-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.ssc-info-card__notice-copy p {
+  margin: 0;
+  color: var(--ssc-text-muted);
+  line-height: 1.5;
+}
+
+.ssc-info-card__notice-copy p:first-child {
+  color: var(--ssc-text);
+}
+
+.ssc-info-card__actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.ssc-form-grid__actions {
+  display: grid;
+  gap: 12px;
+}
+
+.ssc-form-stack--verify-email {
+  width: 100%;
+  max-width: 540px;
+}
+
+.ssc-info-card__button {
+  width: 100%;
+  min-height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--ssc-accent) 0%, var(--ssc-accent-strong) 100%);
+  color: #042534;
+  font-size: 1.02rem;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 14px 30px rgba(31, 174, 189, 0.28);
+  transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
+}
+
+.ssc-info-card__button::after {
+  content: "";
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  background-color: currentColor;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'/%3E%3Cpath d='m13 5 7 7-7 7'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.ssc-info-card__button:hover,
+.ssc-info-card__button:focus-visible {
+  color: #042534;
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+.ssc-info-card__button:active {
+  transform: translateY(0);
+}
+
+.ssc-info-card__footer {
+  margin: 8px 0 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(158, 178, 191, 0.92);
+  font-size: 0.84rem;
+}
+
+.ssc-info-card__footer-icon {
+  width: 14px;
+  height: 14px;
+  background-color: currentColor;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='11' x='3' y='11' rx='2' ry='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.pf-v5-c-alert.pf-m-success,
+.alert-success {
+  border-color: rgba(72, 168, 110, 0.36) !important;
+  background: rgba(59, 131, 85, 0.18) !important;
+  color: #dbffe7 !important;
+}
+
+@media (max-width: 640px) {
+  .ssc-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ssc-helper-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ssc-auth-card__title--icon {
+    align-items: flex-start;
+  }
+
+  .ssc-info-card--success-panel {
+    gap: 16px;
+    padding: 4px 0 0;
+  }
+
+  .ssc-info-card--verify-email {
+    gap: 16px;
+    padding: 4px 0 0;
+  }
+
+  .ssc-info-card--session-state {
+    gap: 16px;
+    padding: 4px 0 0;
+  }
+
+  .ssc-success-icon {
+    width: 84px;
+    height: 84px;
+  }
+
+  .ssc-session-state-icon {
+    width: 96px;
+    height: 96px;
+    border-radius: 28px;
+  }
+
+  .ssc-verify-email-icon {
+    width: 102px;
+    height: 102px;
+    border-radius: 28px;
+  }
+
+  .ssc-auth-card__title--success {
+    font-size: clamp(1.95rem, 8vw, 2.65rem);
+  }
+
+  .ssc-info-card__notice {
+    grid-template-columns: 1fr;
+    text-align: center;
+    justify-items: center;
+  }
+
+  .ssc-info-card__notice-copy {
+    text-align: center;
+  }
+}

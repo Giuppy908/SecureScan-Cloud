@@ -1,0 +1,27 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Esclude dipendenze locali e bundle generati dal tracciamento Git del frontend.
+node_modules
+dist
+dist-ssr
+# Evita il tracciamento dei file locali che terminano con questa estensione.
+*.local
+
+# Editor directories and files
+.vscode/*
+# Fa eccezione per il file di suggerimenti delle estensioni, pur escludendo gli altri file della directory.
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

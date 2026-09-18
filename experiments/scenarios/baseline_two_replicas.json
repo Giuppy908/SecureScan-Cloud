@@ -1,0 +1,14 @@
+{
+  "name": "baseline_two_replicas",
+  "description": "Baseline con Kong e due repliche API attive.",
+  "endpoint_path": "/health",
+  "duration_seconds": 20,
+  "concurrency": 8,
+  "timeout_seconds": 2.0,
+  "expected_active_replicas": 2,
+  "initial_service_states": {
+    "analysis-api-1": "running",
+    "analysis-api-2": "running"
+  },
+  "actions": []
+}

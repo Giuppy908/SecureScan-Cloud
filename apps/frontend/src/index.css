@@ -1,0 +1,30 @@
+/*
+ * Regole globali minime del documento.
+ *
+ * Il grosso dello stile vive nel tema MUI. Qui rimangono soltanto le basi che
+ * devono esistere prima del montaggio di React: box sizing coerente e altezza
+ * minima dell'intero viewport.
+ */
+/* Imposta la resa tipografica globale sul documento, prima delle personalizzazioni dei componenti MUI. */
+:root {
+  /* Evita che il browser sintetizzi artificialmente varianti del font non disponibili. */
+  font-synthesis: none;
+  /* Richiede una resa orientata alla leggibilità; il supporto concreto dipende dal browser. */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Include padding e bordi nella dimensione dichiarata degli elementi. */
+* {
+  box-sizing: border-box;
+}
+
+/* Mantiene documento e contenitore React alti almeno quanto la finestra del browser. */
+html,
+body,
+#root {
+  /* Rimuove i margini predefiniti da documento e nodo React per allinearli alla shell. */
+  margin: 0;
+  min-height: 100vh;
+}

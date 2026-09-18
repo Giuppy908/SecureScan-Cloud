@@ -1,0 +1,15 @@
+# Grafana non interroga direttamente API, worker o gateway.
+# Tutte le dashboard passano da questo datasource, che punta a Prometheus gia`
+# incaricato di raccogliere e storicizzare le metriche dei vari target.
+apiVersion: 1
+
+datasources:
+  # Datasource unico della demo locale: mantiene dashboard e query stabili
+  # anche se i singoli servizi osservati cambiano o vengono riavviati.
+  - name: SecureScan Prometheus
+    uid: securescan-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

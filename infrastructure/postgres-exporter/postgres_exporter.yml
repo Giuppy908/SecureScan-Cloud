@@ -1,0 +1,5 @@
+# Configurazione minima del postgres-exporter.
+# In questa istanza non vengono aggiunti auth module custom: l'exporter usa
+# direttamente la DATA_SOURCE_NAME passata dal Compose e trasforma lo stato del
+# database in metriche Prometheus.
+auth_modules: {}

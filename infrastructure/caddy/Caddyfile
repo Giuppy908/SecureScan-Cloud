@@ -1,0 +1,19 @@
+# Hostname pubblico principale dell'applicazione.
+# Serve:
+# - il bundle frontend React;
+# - il backend Kong sotto `/api/*` senza alterare il path atteso dall'API.
+{$SECURESCAN_PUBLIC_FRONTEND_URL} {
+  encode zstd gzip
+
+  reverse_proxy /api/* kong:8000
+  reverse_proxy frontend:80
+}
+
+# Hostname dedicato a Keycloak.
+# La separazione `app` / `auth` mantiene piu` chiari issuer, redirect URI e
+# flow di autenticazione senza esporre direttamente la porta 8180.
+{$SECURESCAN_PUBLIC_KEYCLOAK_URL} {
+  encode zstd gzip
+
+  reverse_proxy keycloak:8080
+}

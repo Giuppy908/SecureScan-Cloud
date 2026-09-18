@@ -1,0 +1,17 @@
+# Questo file dice a Grafana dove trovare le dashboard versionate nel
+# repository. In questo modo l'ambiente locale si avvia gia` con i pannelli
+# pronti, senza import manuali dall'interfaccia web.
+apiVersion: 1
+
+providers:
+  # Il provider di tipo "file" carica automaticamente i JSON montati nel
+  # container. La cartella dedicata separa la dashboard SecureScan dai futuri
+  # pannelli che potrebbero essere aggiunti in altre directory.
+  - name: SecureScan Dashboards
+    orgId: 1
+    folder: SecureScan Cloud
+    type: file
+    disableDeletion: true
+    editable: false
+    options:
+      path: /var/lib/grafana/dashboards

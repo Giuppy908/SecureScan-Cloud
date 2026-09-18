@@ -1,0 +1,125 @@
+/*
+ * Stili del theme Account Console.
+ *
+ * Questa sezione non crea nuove funzionalità applicative: rende coerente con il
+ * resto di SecureScan Cloud l'area account nativa di Keycloak, usata quando il
+ * browser viene inviato verso funzioni account esterne al frontend React.
+ */
+:root {
+  color-scheme: dark;
+  --ssc-bg-1: #07111b;
+  --ssc-bg-2: #0d1f2e;
+  --ssc-bg-3: #10293d;
+  --ssc-surface: rgba(10, 24, 36, 0.94);
+  --ssc-surface-soft: rgba(16, 37, 53, 0.84);
+  --ssc-border: rgba(143, 211, 220, 0.18);
+  --ssc-text: #eff7fb;
+  --ssc-text-muted: #9eb2bf;
+  --ssc-accent: #42d9ea;
+  --ssc-accent-strong: #1faebd;
+  --ssc-focus: rgba(66, 217, 234, 0.28);
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  color: var(--ssc-text);
+  background:
+    radial-gradient(circle at top left, rgba(66, 217, 234, 0.14), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(31, 174, 189, 0.1), transparent 30%),
+    linear-gradient(145deg, var(--ssc-bg-1) 0%, var(--ssc-bg-2) 55%, var(--ssc-bg-3) 100%);
+}
+
+body,
+.pf-v5-c-page {
+  background: transparent !important;
+  color: var(--ssc-text) !important;
+}
+
+.pf-v5-c-masthead,
+.pf-v5-c-page__header {
+  background: rgba(7, 17, 27, 0.92) !important;
+  border-bottom: 1px solid var(--ssc-border);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.pf-v5-c-page__header-brand-link,
+.pf-v5-c-title,
+.pf-v5-c-brand,
+.pf-v5-c-nav__link,
+.pf-v5-c-button.pf-m-link {
+  color: var(--ssc-text) !important;
+}
+
+.pf-v5-c-page__main,
+.pf-v5-c-page__main-section {
+  background: transparent !important;
+}
+
+.pf-v5-c-card,
+.pf-v5-c-panel,
+.pf-v5-c-description-list,
+.pf-v5-c-empty-state,
+.pf-v5-c-page__main-section .pf-v5-c-card {
+  background: var(--ssc-surface) !important;
+  border: 1px solid var(--ssc-border) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.26);
+  color: var(--ssc-text) !important;
+}
+
+.pf-v5-c-nav {
+  background: rgba(7, 17, 27, 0.58) !important;
+}
+
+.pf-v5-c-nav__link.pf-m-current,
+.pf-v5-c-nav__link:hover,
+.pf-v5-c-nav__link:focus-visible {
+  background: rgba(66, 217, 234, 0.12) !important;
+  color: var(--ssc-text) !important;
+}
+
+.pf-v5-c-form-control,
+input,
+select,
+textarea {
+  border-radius: 16px !important;
+  border: 1px solid rgba(151, 178, 191, 0.22) !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+  color: var(--ssc-text) !important;
+  box-shadow: none !important;
+}
+
+.pf-v5-c-form-control:focus,
+.pf-v5-c-form-control:focus-visible,
+input:focus,
+input:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: none !important;
+  border-color: rgba(66, 217, 234, 0.82) !important;
+  box-shadow: 0 0 0 4px var(--ssc-focus) !important;
+}
+
+.pf-v5-c-button.pf-m-primary {
+  border-radius: 16px !important;
+  border: 0 !important;
+  background: linear-gradient(135deg, var(--ssc-accent) 0%, var(--ssc-accent-strong) 100%) !important;
+  color: #042534 !important;
+  font-weight: 800 !important;
+}
+
+.pf-v5-c-button.pf-m-secondary,
+.pf-v5-c-button.pf-m-link {
+  color: var(--ssc-accent) !important;
+}
+
+.pf-v5-c-alert {
+  border-radius: 16px !important;
+}

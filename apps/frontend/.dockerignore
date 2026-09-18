@@ -1,0 +1,20 @@
+# File e directory esclusi dal contesto di build Docker del frontend.
+# Servono a ridurre dimensione e rumore della build senza influire sul bundle finale.
+# Impedisce di copiare le dipendenze dell'host: lo stage Node le installa dal lockfile.
+node_modules
+dist
+.git
+.gitignore
+# Esclude i file di ambiente elencati dal contesto inviato alla build Docker.
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+.idea
+.vscode
+# Esclude i risultati di copertura, che non sono sorgenti da distribuire.
+coverage
+*.log

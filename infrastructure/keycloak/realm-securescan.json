@@ -1,0 +1,228 @@
+{
+  "realm": "securescan",
+  "enabled": true,
+  "displayName": "SecureScan Cloud",
+  "displayNameHtml": "<strong>SecureScan Cloud</strong>",
+  "loginTheme": "securescan",
+  "accountTheme": "securescan",
+  "sslRequired": "none",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "it"
+  ],
+  "defaultLocale": "it",
+  "registrationAllowed": true,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": true,
+  "rememberMe": false,
+  "verifyEmail": false,
+  "loginWithEmailAllowed": true,
+  "registrationEmailAsUsername": false,
+  "duplicateEmailsAllowed": false,
+  "bruteForceProtected": true,
+  "smtpServer": {},
+  "passwordPolicy": "length(8) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "default-roles-securescan",
+        "description": "Default roles assigned to newly registered users.",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "analyst"
+          ]
+        },
+        "clientRole": false
+      },
+      {
+        "name": "analyst",
+        "description": "Can create and read analyses.",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "admin",
+        "description": "Can administer SecureScan Cloud.",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "analyst"
+          ]
+        },
+        "clientRole": false
+      }
+    ]
+  },
+  "defaultRole": {
+    "name": "default-roles-securescan",
+    "description": "Default roles assigned to newly registered users.",
+    "composite": true,
+    "composites": {
+      "realm": [
+        "analyst"
+      ]
+    },
+    "clientRole": false
+  },
+  "clients": [
+    {
+      "clientId": "securescan-frontend",
+      "name": "SecureScan Frontend",
+      "description": "Public browser client for the SecureScan Cloud frontend.",
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "bearerOnly": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "http://localhost:8080",
+      "baseUrl": "http://localhost:8080",
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:8080/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience-securescan-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "securescan-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "lightweight.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "securescan-api",
+      "name": "SecureScan Analysis API",
+      "description": "Audience target for backend API access tokens.",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false
+    },
+    {
+      "clientId": "securescan-rbac-demo",
+      "name": "SecureScan RBAC Demo Client",
+      "description": "Local-only client for scripted RBAC verification against the demo stack.",
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "audience-securescan-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "securescan-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "lightweight.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "securescan-password-verification",
+      "name": "SecureScan Password Verification",
+      "description": "Confidential client used by the backend to validate the current password before authenticated password changes.",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "change-me-securescan-password-verification",
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [],
+      "webOrigins": []
+    },
+    {
+      "clientId": "securescan-admin-api",
+      "name": "SecureScan Backend User Management",
+      "description": "Local-only confidential client used by the backend to manage user profiles and roles.",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "change-me-securescan-admin-api",
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "analyst.demo",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Analista",
+      "lastName": "Demo",
+      "email": "analyst.demo@securescan.local",
+      "realmRoles": [
+        "analyst"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ChangeMe-Analyst-123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "admin.demo",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Amministratore",
+      "lastName": "Demo",
+      "email": "admin.demo@securescan.local",
+      "realmRoles": [
+        "admin"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ChangeMe-Admin-123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "serviceAccountClientId": "securescan-admin-api",
+      "enabled": true,
+      "clientRoles": {
+        "realm-management": [
+          "query-users",
+          "view-users",
+          "manage-users",
+          "view-realm"
+        ]
+      },
+      "username": "service-account-securescan-admin-api"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+# Overlay demo per rendere più visibile la fase `processing` durante le
+# dimostrazioni, senza cambiare l'architettura reale dello stack.
+services:
+  analysis-worker:
+    environment:
+      WORKER_MIN_PROCESSING_SECONDS: "2"

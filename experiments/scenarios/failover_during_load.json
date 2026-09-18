@@ -1,0 +1,20 @@
+{
+  "name": "failover_during_load",
+  "description": "Arresto di analysis-api-2 durante il carico con due repliche iniziali.",
+  "endpoint_path": "/health",
+  "duration_seconds": 24,
+  "concurrency": 8,
+  "timeout_seconds": 2.0,
+  "expected_active_replicas": 2,
+  "initial_service_states": {
+    "analysis-api-1": "running",
+    "analysis-api-2": "running"
+  },
+  "actions": [
+    {
+      "type": "stop_service",
+      "service": "analysis-api-2",
+      "offset_seconds": 8
+    }
+  ]
+}

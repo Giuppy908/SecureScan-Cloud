@@ -1,0 +1,609 @@
+# Docker Compose è il punto in cui l'architettura locale viene assemblata in
+# container separati. Ogni servizio mantiene una responsabilità precisa:
+# frontend, gateway, autenticazione, API, worker, database, motore antimalware
+# e osservabilità. Questo rende più chiaro il ruolo di ciascun componente e
+# permette di simulare una piattaforma distribuita anche sul portatile locale.
+services:
+  # PostgreSQL è il database applicativo condiviso da Analysis API e Worker.
+  # Qui vengono salvate analisi, profili applicativi, heartbeat e risultati
+  # delle scansioni. Non contiene invece le password degli utenti, che restano
+  # interamente in carico a Keycloak.
+  postgres:
+    image: postgres:17.5-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-securescan}
+      POSTGRES_USER: ${POSTGRES_USER:-securescan}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - securescan-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-securescan} -d ${POSTGRES_DB:-securescan}",
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    networks:
+      - securescan-local
+
+  # ClamAV gira in un container separato perché è un motore antimalware
+  # indipendente dall'API. Il Worker lo contatta sulla rete Docker interna
+  # (`clamav:3310`) tramite clamd; il browser non lo raggiunge mai direttamente.
+  clamav:
+    image: clamav/clamav:1.4-debian13-slim
+    environment:
+      CLAMAV_NO_MILTERD: "true"
+      CLAMD_STARTUP_TIMEOUT: ${CLAMD_STARTUP_TIMEOUT:-1800}
+      FRESHCLAM_CHECKS: ${FRESHCLAM_CHECKS:-12}
+    volumes:
+      - securescan-clamav-db:/var/lib/clamav
+      - ../../infrastructure/clamav/clamd.conf:/etc/clamav/clamd.conf:ro
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - securescan-local
+
+  # Keycloak gestisce autenticazione, registrazione, reset password, verifica
+  # email e generazione dei JWT usati poi dal frontend verso il backend.
+  # È pubblicato sul Mac per poter mostrare all'utente le pagine auth.
+  keycloak:
+    build:
+      context: ../../infrastructure/keycloak
+      dockerfile: Dockerfile
+    image: securescan-keycloak:26.7.0-custom
+    command:
+      [
+        "start-dev",
+        "--import-realm",
+        "--hostname=${KEYCLOAK_PUBLIC_HOSTNAME:-http://localhost:8180}"
+      ]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:-keycloak-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-change-me-keycloak-admin}
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_MANAGEMENT_HEALTH_ENABLED: "true"
+      KEYCLOAK_SMTP_HOST: ${KEYCLOAK_SMTP_HOST:-}
+      KEYCLOAK_SMTP_PORT: ${KEYCLOAK_SMTP_PORT:-587}
+      KEYCLOAK_SMTP_FROM: ${KEYCLOAK_SMTP_FROM:-}
+      KEYCLOAK_SMTP_FROM_DISPLAY_NAME: ${KEYCLOAK_SMTP_FROM_DISPLAY_NAME:-SecureScan Cloud}
+      KEYCLOAK_SMTP_AUTH: ${KEYCLOAK_SMTP_AUTH:-false}
+      KEYCLOAK_SMTP_USER: ${KEYCLOAK_SMTP_USER:-}
+      KEYCLOAK_SMTP_PASSWORD: ${KEYCLOAK_SMTP_PASSWORD:-}
+      KEYCLOAK_SMTP_SSL: ${KEYCLOAK_SMTP_SSL:-false}
+      KEYCLOAK_SMTP_STARTTLS: ${KEYCLOAK_SMTP_STARTTLS:-true}
+    ports:
+      - "8180:8080"
+    volumes:
+      - securescan-keycloak-data:/opt/keycloak/data
+      - ../../infrastructure/keycloak/realm-securescan.json:/opt/keycloak/data/import/realm-securescan.json:ro
+      - ../../infrastructure/keycloak/theme/securescan:/opt/keycloak/themes/securescan:ro
+    restart: on-failure:3
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bash -c \"exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep '200 OK' <&3\"",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - securescan-local
+
+  # Questo servizio one-shot riallinea il realm appena importato ai valori reali
+  # dell'ambiente di avvio. Serve soprattutto per redirect, SMTP, secret
+  # amministrativi e differenze demo/production.
+  keycloak-runtime-config:
+    image: python:3.12-slim
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    command: ["python", "/opt/securescan/keycloak/apply_runtime_config.py"]
+    environment:
+      KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-securescan}
+      KEYCLOAK_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:-keycloak-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-change-me-keycloak-admin}
+      KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID:-securescan-admin-api}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-change-me-securescan-admin-api}
+      KEYCLOAK_PASSWORD_VERIFICATION_CLIENT_ID: ${KEYCLOAK_PASSWORD_VERIFICATION_CLIENT_ID:-securescan-password-verification}
+      KEYCLOAK_PASSWORD_VERIFICATION_CLIENT_SECRET: ${KEYCLOAK_PASSWORD_VERIFICATION_CLIENT_SECRET:-change-me-securescan-password-verification}
+      EMAIL_VERIFICATION_ENABLED: ${EMAIL_VERIFICATION_ENABLED:-false}
+      KEYCLOAK_SSL_REQUIRED: ${KEYCLOAK_SSL_REQUIRED:-none}
+      KEYCLOAK_FRONTEND_CLIENT_ID: ${KEYCLOAK_FRONTEND_CLIENT_ID:-securescan-frontend}
+      KEYCLOAK_FRONTEND_ROOT_URL: ${KEYCLOAK_FRONTEND_ROOT_URL:-http://localhost:8080}
+      KEYCLOAK_FRONTEND_BASE_URL: ${KEYCLOAK_FRONTEND_BASE_URL:-http://localhost:8080}
+      KEYCLOAK_FRONTEND_REDIRECT_URIS: ${KEYCLOAK_FRONTEND_REDIRECT_URIS:-http://localhost:8080/*}
+      KEYCLOAK_FRONTEND_WEB_ORIGINS: ${KEYCLOAK_FRONTEND_WEB_ORIGINS:-http://localhost:8080}
+      KEYCLOAK_FRONTEND_POST_LOGOUT_REDIRECT_URIS: ${KEYCLOAK_FRONTEND_POST_LOGOUT_REDIRECT_URIS:-http://localhost:8080/*}
+      KEYCLOAK_DISABLE_DEMO_USERS: ${KEYCLOAK_DISABLE_DEMO_USERS:-false}
+      KEYCLOAK_SMTP_HOST: ${KEYCLOAK_SMTP_HOST:-}
+      KEYCLOAK_SMTP_PORT: ${KEYCLOAK_SMTP_PORT:-587}
+      KEYCLOAK_SMTP_FROM: ${KEYCLOAK_SMTP_FROM:-}
+      KEYCLOAK_SMTP_FROM_DISPLAY_NAME: ${KEYCLOAK_SMTP_FROM_DISPLAY_NAME:-SecureScan Cloud}
+      KEYCLOAK_SMTP_AUTH: ${KEYCLOAK_SMTP_AUTH:-false}
+      KEYCLOAK_SMTP_USER: ${KEYCLOAK_SMTP_USER:-}
+      KEYCLOAK_SMTP_PASSWORD: ${KEYCLOAK_SMTP_PASSWORD:-}
+      KEYCLOAK_SMTP_SSL: ${KEYCLOAK_SMTP_SSL:-false}
+      KEYCLOAK_SMTP_STARTTLS: ${KEYCLOAK_SMTP_STARTTLS:-true}
+    volumes:
+      - ../../infrastructure/keycloak:/opt/securescan/keycloak:ro
+    restart: on-failure:3
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - securescan-local
+
+  # Inizializza il volume condiviso /data usato da upload e avatar.
+  # API e Worker devono vedere lo stesso filesystem: l'API salva il file
+  # caricato, il Worker lo legge per la scansione, il frontend usa l'area avatar
+  # per profilo e modifica profilo.
+  upload-storage-init:
+    image: busybox:1.37.0
+    command:
+      [
+        "sh",
+        "-c",
+        "mkdir -p /data/uploads /data/avatars && chown 999:999 /data /data/uploads /data/avatars && chmod 0750 /data && chmod 0770 /data/uploads /data/avatars",
+      ]
+    volumes:
+      - securescan-upload-data:/data
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - securescan-local
+
+  # Prima replica della Analysis API.
+  # Non è esposta direttamente al browser: Kong le inoltra il traffico insieme
+  # alla replica 2. Questo servizio supporta Dashboard, Nuova analisi,
+  # Cronologia, Dettaglio analisi, Profilo, Stato del sistema e Amministrazione.
+  analysis-api-1:
+    build:
+      context: ../../apps/analysis-api
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      keycloak-runtime-config:
+        condition: service_completed_successfully
+      upload-storage-init:
+        condition: service_completed_successfully
+    environment:
+      AUTH_ENABLED: ${AUTH_ENABLED:-true}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:5173}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://securescan:change-me@postgres:5432/securescan}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/data/uploads}
+      AVATAR_DIR: ${AVATAR_DIR:-/data/avatars}
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-250}
+      MAX_AVATAR_SIZE_MB: ${MAX_AVATAR_SIZE_MB:-5}
+      CLAMD_HOST: ${CLAMD_HOST:-clamav}
+      CLAMD_PORT: ${CLAMD_PORT:-3310}
+      CLAMD_TIMEOUT_SECONDS: ${CLAMD_TIMEOUT_SECONDS:-5}
+      MONITORING_HTTP_TIMEOUT_SECONDS: ${MONITORING_HTTP_TIMEOUT_SECONDS:-2}
+      KONG_STATUS_URL: ${KONG_STATUS_URL:-http://kong:8100/status/ready}
+      PROMETHEUS_HEALTH_URL: ${PROMETHEUS_HEALTH_URL:-http://prometheus:9090/-/healthy}
+      GRAFANA_HEALTH_URL: ${GRAFANA_HEALTH_URL:-http://grafana:3000/api/health}
+      POSTGRES_EXPORTER_METRICS_URL: ${POSTGRES_EXPORTER_METRICS_URL:-http://postgres-exporter:9187/metrics}
+      INSTANCE_ID: analysis-api-1
+      API_HEARTBEAT_ENABLED: ${API_HEARTBEAT_ENABLED:-true}
+      API_HEARTBEAT_INTERVAL_SECONDS: ${API_HEARTBEAT_INTERVAL_SECONDS:-5}
+      API_HEARTBEAT_TIMEOUT_SECONDS: ${API_HEARTBEAT_TIMEOUT_SECONDS:-15}
+      CONFIGURED_API_REPLICAS: ${CONFIGURED_API_REPLICAS:-2}
+      WORKER_HEARTBEAT_TIMEOUT_SECONDS: ${WORKER_HEARTBEAT_TIMEOUT_SECONDS:-15}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER:-http://localhost:8180/realms/securescan}
+      KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-securescan}
+      EMAIL_VERIFICATION_ENABLED: ${EMAIL_VERIFICATION_ENABLED:-false}
+      KEYCLOAK_EMAIL_ACTIONS_CLIENT_ID: ${KEYCLOAK_EMAIL_ACTIONS_CLIENT_ID:-securescan-frontend}
+      KEYCLOAK_EMAIL_ACTIONS_REDIRECT_URL: ${KEYCLOAK_EMAIL_ACTIONS_REDIRECT_URL:-http://localhost:8080/profile}
+      KEYCLOAK_SMTP_HOST: ${KEYCLOAK_SMTP_HOST:-}
+      KEYCLOAK_SMTP_PORT: ${KEYCLOAK_SMTP_PORT:-587}
+      KEYCLOAK_SMTP_FROM: ${KEYCLOAK_SMTP_FROM:-}
+      KEYCLOAK_SMTP_FROM_DISPLAY_NAME: ${KEYCLOAK_SMTP_FROM_DISPLAY_NAME:-SecureScan Cloud}
+      KEYCLOAK_SMTP_AUTH: ${KEYCLOAK_SMTP_AUTH:-false}
+      KEYCLOAK_SMTP_USER: ${KEYCLOAK_SMTP_USER:-}
+      KEYCLOAK_SMTP_PASSWORD: ${KEYCLOAK_SMTP_PASSWORD:-}
+      KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL:-http://keycloak:8080/realms/securescan/protocol/openid-connect/certs}
+      KEYCLOAK_AUDIENCE: ${KEYCLOAK_AUDIENCE:-securescan-api}
+      KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID:-securescan-admin-api}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-change-me-securescan-admin-api}
+      KEYCLOAK_PASSWORD_VERIFICATION_CLIENT_ID: ${KEYCLOAK_PASSWORD_VERIFICATION_CLIENT_ID:-securescan-password-verification}
+      KEYCLOAK_PASSWORD_VERIFICATION_CLIENT_SECRET: ${KEYCLOAK_PASSWORD_VERIFICATION_CLIENT_SECRET:-change-me-securescan-password-verification}
+      KEYCLOAK_ADMIN_REQUEST_TIMEOUT_SECONDS: ${KEYCLOAK_ADMIN_REQUEST_TIMEOUT_SECONDS:-5}
+      RUN_DB_MIGRATIONS: "true"
+    volumes:
+      - securescan-upload-data:/data
+    restart: on-failure:3
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status == 200 else 1)",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - securescan-local
+
+  # Seconda replica della stessa Analysis API.
+  # Esiste per distribuire il carico e per permettere al gateway di continuare a
+  # servire richieste anche se una replica non è disponibile.
+  analysis-api-2:
+    build:
+      context: ../../apps/analysis-api
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      keycloak-runtime-config:
+        condition: service_completed_successfully
+      upload-storage-init:
+        condition: service_completed_successfully
+      analysis-api-1:
+        condition: service_healthy
+    environment:
+      AUTH_ENABLED: ${AUTH_ENABLED:-true}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:5173}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://securescan:change-me@postgres:5432/securescan}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/data/uploads}
+      AVATAR_DIR: ${AVATAR_DIR:-/data/avatars}
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-250}
+      MAX_AVATAR_SIZE_MB: ${MAX_AVATAR_SIZE_MB:-5}
+      CLAMD_HOST: ${CLAMD_HOST:-clamav}
+      CLAMD_PORT: ${CLAMD_PORT:-3310}
+      CLAMD_TIMEOUT_SECONDS: ${CLAMD_TIMEOUT_SECONDS:-5}
+      MONITORING_HTTP_TIMEOUT_SECONDS: ${MONITORING_HTTP_TIMEOUT_SECONDS:-2}
+      KONG_STATUS_URL: ${KONG_STATUS_URL:-http://kong:8100/status/ready}
+      PROMETHEUS_HEALTH_URL: ${PROMETHEUS_HEALTH_URL:-http://prometheus:9090/-/healthy}
+      GRAFANA_HEALTH_URL: ${GRAFANA_HEALTH_URL:-http://grafana:3000/api/health}
+      POSTGRES_EXPORTER_METRICS_URL: ${POSTGRES_EXPORTER_METRICS_URL:-http://postgres-exporter:9187/metrics}
+      INSTANCE_ID: analysis-api-2
+      API_HEARTBEAT_ENABLED: ${API_HEARTBEAT_ENABLED:-true}
+      API_HEARTBEAT_INTERVAL_SECONDS: ${API_HEARTBEAT_INTERVAL_SECONDS:-5}
+      API_HEARTBEAT_TIMEOUT_SECONDS: ${API_HEARTBEAT_TIMEOUT_SECONDS:-15}
+      CONFIGURED_API_REPLICAS: ${CONFIGURED_API_REPLICAS:-2}
+      WORKER_HEARTBEAT_TIMEOUT_SECONDS: ${WORKER_HEARTBEAT_TIMEOUT_SECONDS:-15}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER:-http://localhost:8180/realms/securescan}
+      KEYCLOAK_INTERNAL_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-securescan}
+      EMAIL_VERIFICATION_ENABLED: ${EMAIL_VERIFICATION_ENABLED:-false}
+      KEYCLOAK_EMAIL_ACTIONS_CLIENT_ID: ${KEYCLOAK_EMAIL_ACTIONS_CLIENT_ID:-securescan-frontend}
+      KEYCLOAK_EMAIL_ACTIONS_REDIRECT_URL: ${KEYCLOAK_EMAIL_ACTIONS_REDIRECT_URL:-http://localhost:8080/profile}
+      KEYCLOAK_SMTP_HOST: ${KEYCLOAK_SMTP_HOST:-}
+      KEYCLOAK_SMTP_PORT: ${KEYCLOAK_SMTP_PORT:-587}
+      KEYCLOAK_SMTP_FROM: ${KEYCLOAK_SMTP_FROM:-}
+      KEYCLOAK_SMTP_FROM_DISPLAY_NAME: ${KEYCLOAK_SMTP_FROM_DISPLAY_NAME:-SecureScan Cloud}
+      KEYCLOAK_SMTP_AUTH: ${KEYCLOAK_SMTP_AUTH:-false}
+      KEYCLOAK_SMTP_USER: ${KEYCLOAK_SMTP_USER:-}
+      KEYCLOAK_SMTP_PASSWORD: ${KEYCLOAK_SMTP_PASSWORD:-}
+      KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL:-http://keycloak:8080/realms/securescan/protocol/openid-connect/certs}
+      KEYCLOAK_AUDIENCE: ${KEYCLOAK_AUDIENCE:-securescan-api}
+      KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID:-securescan-admin-api}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-change-me-securescan-admin-api}
+      KEYCLOAK_PASSWORD_VERIFICATION_CLIENT_ID: ${KEYCLOAK_PASSWORD_VERIFICATION_CLIENT_ID:-securescan-password-verification}
+      KEYCLOAK_PASSWORD_VERIFICATION_CLIENT_SECRET: ${KEYCLOAK_PASSWORD_VERIFICATION_CLIENT_SECRET:-change-me-securescan-password-verification}
+      KEYCLOAK_ADMIN_REQUEST_TIMEOUT_SECONDS: ${KEYCLOAK_ADMIN_REQUEST_TIMEOUT_SECONDS:-5}
+      RUN_DB_MIGRATIONS: "false"
+    volumes:
+      - securescan-upload-data:/data
+    restart: on-failure:3
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status == 200 else 1)",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - securescan-local
+
+  # Kong è l'API Gateway pubblico del progetto.
+  # Il browser chiama localhost:8000 e non i container API interni. Kong applica
+  # CORS, rate limiting, request-size limiting, correlation ID e bilanciamento
+  # del traffico verso le due repliche backend.
+  kong:
+    image: kong:3.8.0
+    depends_on:
+      analysis-api-1:
+        condition: service_healthy
+      analysis-api-2:
+        condition: service_healthy
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /tmp/kong/kong.yaml
+      KONG_PROXY_LISTEN: 0.0.0.0:8000 reuseport backlog=16384
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_STATUS_LISTEN: 0.0.0.0:8100
+      KONG_LOG_LEVEL: notice
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_RATE_LIMIT_GET_PER_MINUTE: ${KONG_RATE_LIMIT_GET_PER_MINUTE:-600}
+      KONG_RATE_LIMIT_ME_GET_PER_MINUTE: ${KONG_RATE_LIMIT_ME_GET_PER_MINUTE:-240}
+      KONG_RATE_LIMIT_ME_WRITE_PER_MINUTE: ${KONG_RATE_LIMIT_ME_WRITE_PER_MINUTE:-60}
+      KONG_RATE_LIMIT_POST_PER_MINUTE: ${KONG_RATE_LIMIT_POST_PER_MINUTE:-30}
+      KONG_RATE_LIMIT_DELETE_PER_MINUTE: ${KONG_RATE_LIMIT_DELETE_PER_MINUTE:-10}
+      KONG_MAX_REQUEST_SIZE_MB: ${KONG_MAX_REQUEST_SIZE_MB:-256}
+      KONG_CORS_ALLOWED_ORIGINS: ${KONG_CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:5173}
+    command:
+      [
+        "/bin/sh",
+        "-c",
+        "sh /opt/kong/securescan/render-config.sh /opt/kong/securescan/kong.template.yaml /tmp/kong/kong.yaml && kong config parse /tmp/kong/kong.yaml && exec /docker-entrypoint.sh kong docker-start",
+      ]
+    volumes:
+      - ../../infrastructure/kong:/opt/kong/securescan:ro
+    ports:
+      - "8000:8000"
+      - "127.0.0.1:8001:8001"
+      - "127.0.0.1:8100:8100"
+    restart: on-failure:3
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - securescan-local
+
+  # Il Worker elabora in background le analisi create dall'API.
+  # Legge i job da PostgreSQL, accede al file condiviso in /data/uploads e
+  # interroga ClamAV/YARA. I risultati tornano poi visibili in Cronologia e
+  # Dettaglio analisi.
+  analysis-worker:
+    build:
+      context: ../../apps/analysis-worker
+      dockerfile: Dockerfile
+    depends_on:
+      upload-storage-init:
+        condition: service_completed_successfully
+      analysis-api-1:
+        condition: service_healthy
+      clamav:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://securescan:change-me@postgres:5432/securescan}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/data/uploads}
+      WORKER_POLL_INTERVAL_SECONDS: ${WORKER_POLL_INTERVAL_SECONDS:-1}
+      WORKER_HEARTBEAT_INTERVAL_SECONDS: ${WORKER_HEARTBEAT_INTERVAL_SECONDS:-5}
+      WORKER_HEARTBEAT_TIMEOUT_SECONDS: ${WORKER_HEARTBEAT_TIMEOUT_SECONDS:-15}
+      WORKER_MIN_PROCESSING_SECONDS: ${WORKER_MIN_PROCESSING_SECONDS:-0}
+      WORKER_PROCESSING_TIMEOUT_SECONDS: ${WORKER_PROCESSING_TIMEOUT_SECONDS:-120}
+      WORKER_MAX_ATTEMPTS: ${WORKER_MAX_ATTEMPTS:-3}
+      WORKER_ID: ${WORKER_ID:-}
+      WORKER_HEALTH_PORT: ${WORKER_HEALTH_PORT:-8081}
+      CLAMD_HOST: ${CLAMD_HOST:-clamav}
+      CLAMD_PORT: ${CLAMD_PORT:-3310}
+      CLAMD_TIMEOUT_SECONDS: ${CLAMD_TIMEOUT_SECONDS:-120}
+      YARA_RULES_DIR: ${YARA_RULES_DIR:-/srv/analysis-worker/rules}
+      YARA_MATCH_TIMEOUT_SECONDS: ${YARA_MATCH_TIMEOUT_SECONDS:-30}
+    volumes:
+      - securescan-upload-data:/data
+    restart: on-failure:3
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import os, sys, urllib.request; port = os.getenv('WORKER_HEALTH_PORT', '8081'); sys.exit(0 if urllib.request.urlopen(f'http://127.0.0.1:{port}/health').status == 200 else 1)",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - securescan-local
+
+  # postgres-exporter non serve alle query applicative normali.
+  # Traduce lo stato del database in metriche Prometheus, poi visualizzabili in
+  # Grafana e indirettamente utili anche allo Stato del sistema.
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.17.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER:-securescan}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-securescan}?sslmode=disable
+    command:
+      - --config.file=/etc/postgres-exporter/postgres_exporter.yml
+      - --log.level=warn
+    volumes:
+      - ../../infrastructure/postgres-exporter/postgres_exporter.yml:/etc/postgres-exporter/postgres_exporter.yml:ro
+    restart: on-failure:3
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:9187/metrics >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - securescan-local
+
+  # Prometheus raccoglie metriche dai componenti principali, ma verrà
+  # documentato in profondità in una passata dedicata. Qui è utile capire che
+  # dipende dai target già healthy per poter partire con una vista coerente.
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    depends_on:
+      kong:
+        condition: service_healthy
+      analysis-api-1:
+        condition: service_healthy
+      analysis-api-2:
+        condition: service_healthy
+      analysis-worker:
+        condition: service_healthy
+      postgres-exporter:
+        condition: service_healthy
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    volumes:
+      - ../../infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - securescan-prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    restart: on-failure:3
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:9090/-/healthy >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - securescan-local
+
+  # Grafana visualizza le metriche raccolte da Prometheus. Anche questo servizio
+  # verrà approfondito dopo; nel Compose è rilevante soprattutto come consumer
+  # finale dei dati di osservabilità.
+  grafana:
+    image: grafana/grafana:11.2.0
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me-grafana}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: http://localhost:3000
+    volumes:
+      - ../../infrastructure/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../../infrastructure/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - securescan-grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: on-failure:3
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:3000/api/health >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - securescan-local
+
+  # Il frontend React compilato viene servito da Nginx nel suo container.
+  # L'utente apre questa porta dal browser, poi l'applicazione React chiama Kong
+  # su localhost:8000 e Keycloak su localhost:8180.
+  frontend:
+    build:
+      context: ../../apps/frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_ANALYSIS_API_URL: ${VITE_ANALYSIS_API_URL:-http://localhost:8000}
+        VITE_MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-250}
+        VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-http://localhost:8180}
+        VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM:-securescan}
+        VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-securescan-frontend}
+    depends_on:
+      kong:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    restart: on-failure:3
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - securescan-local
+
+networks:
+  # Rete bridge privata dello stack locale.
+  # Dentro questa rete i servizi si raggiungono tramite DNS Docker usando il
+  # nome del servizio: `postgres:5432`, `clamav:3310`, `keycloak:8080`, ecc.
+  # Questo è diverso da `localhost`, che indica invece il Mac/browser host.
+  securescan-local:
+    name: securescan-local
+    driver: bridge
+
+volumes:
+  # I volumi nominati mantengono i dati oltre il ciclo di vita dei singoli
+  # container: database, upload/avatar, realm Keycloak, firme ClamAV e
+  # osservabilità. Senza questi volumi la demo locale perderebbe stato a ogni
+  # ricreazione dello stack.
+  securescan-postgres-data:
+    name: securescan-postgres-data
+  securescan-upload-data:
+    name: securescan-upload-data
+  securescan-keycloak-data:
+    name: securescan-keycloak-data
+  securescan-clamav-db:
+    name: securescan-clamav-db
+  securescan-prometheus-data:
+    name: securescan-prometheus-data
+  securescan-grafana-data:
+    name: securescan-grafana-data

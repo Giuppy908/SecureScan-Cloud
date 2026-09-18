@@ -1,0 +1,51 @@
+# Prometheus raccoglie metriche con modello "pull": interroga periodicamente
+# gli endpoint /metrics dei servizi invece di ricevere dati in push.
+# In SecureScan Cloud questo permette di osservare gateway, repliche API,
+# worker e stato del database dalla stessa base temporale.
+global:
+  # Intervalli brevi rendono leggibili demo e test HA senza introdurre
+  # latenze eccessive tra un evento e la sua comparsa nei grafici.
+  scrape_interval: 5s
+  evaluation_interval: 5s
+  scrape_timeout: 4s
+
+scrape_configs:
+  # Auto-monitoraggio di Prometheus: serve a distinguere problemi del monitor
+  # da problemi dei servizi osservati.
+  - job_name: prometheus
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  # Kong e` il punto di ingresso del browser verso il backend. Le sue metriche
+  # aiutano a studiare traffico, codici HTTP, latenze e distribuzione verso
+  # le due repliche Analysis API.
+  - job_name: kong
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["kong:8100"]
+
+  # Le due repliche espongono la stessa Analysis API. Prometheus le interroga
+  # separatamente per rendere visibili bilanciamento del carico, disponibilita`
+  # di ogni istanza e differenze di traffico durante i test HA.
+  - job_name: analysis-api
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "analysis-api-1:8000"
+          - "analysis-api-2:8000"
+
+  # Il worker elabora in background le analisi create dalla pagina "Nuova
+  # analisi". Queste metriche alimentano osservabilita` tecnica su code,
+  # completamenti, fallimenti e durata della pipeline ClamAV/YARA.
+  - job_name: analysis-worker
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["analysis-worker:8081"]
+
+  # PostgreSQL non espone metriche Prometheus native. L'exporter traduce lo
+  # stato interno del database in serie temporali leggibili da Prometheus e
+  # poi da Grafana.
+  - job_name: postgres-exporter
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["postgres-exporter:9187"]

@@ -1,0 +1,14 @@
+{
+  "name": "single_replica",
+  "description": "Scenario con una sola replica API attiva.",
+  "endpoint_path": "/health",
+  "duration_seconds": 20,
+  "concurrency": 8,
+  "timeout_seconds": 2.0,
+  "expected_active_replicas": 1,
+  "initial_service_states": {
+    "analysis-api-1": "running",
+    "analysis-api-2": "stopped"
+  },
+  "actions": []
+}

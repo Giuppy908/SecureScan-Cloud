@@ -1,0 +1,7 @@
+# La directory `results/` conserva output generati dagli esperimenti:
+# JSON di scenario, CSV riepilogativi, log e grafici SVG.
+# Manteniamo versionati solo i placeholder necessari a preservare la cartella
+# nel repository senza imporre il commit dei risultati locali.
+*
+!.gitignore
+!.gitkeep
